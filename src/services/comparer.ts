@@ -1,5 +1,5 @@
 import { commands, Uri, extensions, window } from 'vscode';
-import { compare, Difference, fileCompareHandlers } from 'dir-compare';
+import { compare, Difference, fileCompareHandlers, Result } from 'dir-compare';
 import { openFolder } from './openFolder';
 import * as path from 'path';
 import { DiffViewTitle, getConfiguration } from './configuration';
@@ -104,6 +104,18 @@ function getOptions() {
   return options;
 }
 
+function printResult(result: Result) {
+  console.log('Directories are %s', result.same ? 'identical' : 'different')
+  console.log('Statistics - equal entries: %s, distinct entries: %s, left only entries: %s, right only entries: %s, differences: %s',
+    result.equal, result.distinct, result.left, result.right, result.differences)
+  if (!result.diffSet) {
+    console.log('result is undefined')
+    return
+  }
+  result.diffSet.forEach(dif => console.log(`${dif.name1} ${dif.name2} ${dif.state}`))
+}
+
+
 export async function compareFolders(): Promise<CompareResult> {
   const emptyResponse = () => Promise.resolve(new CompareResult([], [], [], [], [], '', ''));
   try {
@@ -121,6 +133,8 @@ export async function compareFolders(): Promise<CompareResult> {
     };
     // do the comparison
     const res = await compare(folder1Path, folder2Path, concatenatedOptions);
+    console.log(JSON.stringify(concatenatedOptions, null, 2))
+    printResult(res)
 
     // get the diffs
     const { diffSet = [] } = res;
